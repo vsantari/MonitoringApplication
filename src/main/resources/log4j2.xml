@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration>
+  <Appenders>
+    <RollingFile name="file" fileName="./logs/MonitoringApplication.log" immediateFlush="false" append="false" filePattern="./logs/MonitoringApplication-%d{'%d{yyyy-MM-dd}.log.gz">
+      <PatternLayout pattern="%d{ISO8601} [%t] %-5p %c %x - %m%n"/>
+      <TimeBasedTriggeringPolicy />
+    </RollingFile>
+    <Console name="console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%5p [%t] %d{ISO8601} %F (line %L) %m%n" />
+    </Console>
+  </Appenders>
+  <Loggers>
+    <AsyncLogger name="com.csbank" level="DEBUG" />
+    <AsyncRoot level="WARN">
+      <AppenderRef ref="file" />
+    </AsyncRoot>
+  </Loggers>
+</Configuration>

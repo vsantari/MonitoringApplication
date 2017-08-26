@@ -1,0 +1,52 @@
+apply plugin: 'java'
+
+[compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
+
+defaultTasks 'build'
+
+task cleanLog(type: Delete) { delete fileTree(dir: './logs', include: '*.log') }
+def allCleanTasks = getTasksByName('clean', true)
+def allBuildTasks = getTasksByName('build', true)
+
+task cleanAll {
+  dependsOn cleanLog
+  dependsOn clean
+}
+
+task run(type: JavaExec) {
+    dependsOn cleanLog
+    dependsOn allBuildTasks
+    workingDir = '.'
+    main = 'com.csbank.MonitoringApplication'
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    compile group: 'org.apache.logging.log4j', name: 'log4j-api', version: '2.4.1'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.4.1'
+    compile group: 'org.apache.logging.log4j', name: 'log4j-slf4j-impl', version: '2.4.1'
+    compile group: 'com.lmax', name: 'disruptor', version: '3.+'
+    testCompile group: 'junit', name: 'junit', version: '4.+'
+}
+
+sourceCompatibility = 1.8
+version = '1.0'
+
+jar {
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    manifest {
+        attributes 'Main-Class': 'com.csbank.MonitoringApplication',
+                'Implementation-Title': 'MonitoringApplication',
+                'Implementation-Version': version
+        }
+}
+
+test {
+    testLogging {
+        events "passed", "skipped", "failed", "standardOut", "standardError"
+    }
+}
