@@ -1,1 +1,2 @@
 language: java
+script: ./gradlew build run -DURL_STRINGS_PATH="./URL_Strings.txt"
