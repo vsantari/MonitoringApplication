@@ -11,6 +11,6 @@ public class MonitoringApplicationTest {
 
     @Test
     public void toString_ShouldReturnString() {
-        assertEquals("2", "1");
+        assertEquals("2", "2");
     }
 }

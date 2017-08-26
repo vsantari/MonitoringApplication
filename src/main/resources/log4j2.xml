@@ -6,13 +6,14 @@
       <TimeBasedTriggeringPolicy />
     </RollingFile>
     <Console name="console" target="SYSTEM_OUT">
-      <PatternLayout pattern="%5p [%t] %d{ISO8601} %F (line %L) %m%n" />
+      <PatternLayout pattern="%d{ISO8601} [%t] %-5p %c %x - %m%n"/>
     </Console>
   </Appenders>
   <Loggers>
     <AsyncLogger name="com.csbank" level="DEBUG" />
     <AsyncRoot level="WARN">
       <AppenderRef ref="file" />
+      <AppenderRef ref="console" />
     </AsyncRoot>
   </Loggers>
 </Configuration>

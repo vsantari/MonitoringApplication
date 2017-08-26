@@ -50,3 +50,7 @@ test {
         events "passed", "skipped", "failed", "standardOut", "standardError"
     }
 }
+
+tasks.withType(JavaExec) {
+    systemProperties System.properties
+}
