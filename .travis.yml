@@ -2,7 +2,7 @@ language: java
 script: ./gradlew build run -DURL_STRINGS_PATH="./URL_Strings.txt"
 addons:
   sonarcloud:
-    organization: "sonarcloud_MonitoringApplication_monitoringapplication" # the key of the org you chose at step #3
+    organization: "monitoringapplication" # the key of the org you chose at step #3
     token:
       secure: 0f7fe591eb5255c8ad2985352fc5dd86c9a09f80
 script:
