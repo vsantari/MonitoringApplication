@@ -26,6 +26,8 @@ public class MonitoringApplication {
     private static final String MAP_RESPONSE_TIME_KEY = "responsetime";
     private static final String MAP_ERROR_KEY = "error";
 
+    private static final String HTML_TAG_END_TD = "</td>";
+
     private static final Logger LOG = LogManager.getLogger(MonitoringApplication.class);
 
     public static void main(String[] args) {
@@ -58,31 +60,41 @@ public class MonitoringApplication {
      * @return Array String
      */
     private static String[] readURLStringFromFile(String filename) {
-        String[] urlStrings = null;
-        LOG.debug("Reading {}", filename);
+        LOG.debug("Start readURLStringFromFile.. filename={}", filename);
+        String[] urlStrings =null;
+        FileReader fileReader = null;
         BufferedReader bufferedReader = null;
         try {
-            FileReader fileReader = new FileReader(filename);
+            fileReader = new FileReader(filename);
             bufferedReader = new BufferedReader(fileReader);
-            List<String> lines = new ArrayList<String>();
+            List<String> lines = new ArrayList();
             String line = null;
             while ((line = bufferedReader.readLine()) != null) {
-               line = line.trim();
+                line = line.trim();
                 if (!line.equals("")) {
                     lines.add(line);
                 }
             }
             urlStrings = lines.toArray(new String[lines.size()]);
         } catch (IOException ie) {
-            LOG.error("Failed to read {}. Found {}", filename, ie.toString());
-        }finally {
-            try {
-                bufferedReader.close();
-            } catch (IOException ie) {
-                LOG.error(ie.getMessage());
+            LOG.error(ie.getMessage());
+        } finally {
+            if (bufferedReader != null) {
+                try {
+                    bufferedReader.close();
+                } catch(IOException ie){
+                    LOG.error(ie.getMessage());
+                }
+            }
+            if (fileReader != null ) {
+                try {
+                    bufferedReader.close();
+                } catch(IOException ie){
+                    LOG.error(ie.getMessage());
+                }
             }
         }
-       return urlStrings;
+        return urlStrings;
     }
 
     /**
@@ -91,8 +103,8 @@ public class MonitoringApplication {
      * @return ArrayList
      */
     private static  ArrayList<LinkedHashMap<String, String>> startMonitor(String[] urlStrings)  {
-        LOG.debug("Start startMonitor urlStrings={}", urlStrings.toString() );
-        ArrayList<LinkedHashMap<String, String>> results = new ArrayList<LinkedHashMap<String, String>>();
+        LOG.debug("Start startMonitor");
+        ArrayList<LinkedHashMap<String, String>> results = new ArrayList();
 
         for (String urlString: urlStrings) {
             String error = null;
@@ -118,7 +130,7 @@ public class MonitoringApplication {
                             timestamp = String.valueOf(date.getTime());
                             long end = System.currentTimeMillis();
                             if (isGreenStatus) {
-                                LinkedHashMap<String, String> output = new LinkedHashMap<String, String>();
+                                LinkedHashMap<String, String> output = new LinkedHashMap();
                                 long responeTime = (end - start);
                                 output.put(MAP_TIMESTAMP_KEY, timestamp);
                                 output.put(MAP_STATUS_KEY, "GREEN");
@@ -151,7 +163,7 @@ public class MonitoringApplication {
                 }
             }
             if (!isGreenStatus) {
-                LinkedHashMap<String, String> output = new LinkedHashMap<String, String>();
+                LinkedHashMap<String, String> output = new LinkedHashMap();
                 output.put(MAP_TIMESTAMP_KEY, timestamp);
                 output.put(MAP_STATUS_KEY, "RED");
                 output.put(MAP_URL_KEY, urlString);
@@ -190,9 +202,10 @@ public class MonitoringApplication {
      * @param results
      */
     private static void writeHtmlReport(ArrayList<LinkedHashMap<String, String>> results)  {
+        PrintWriter pw = null;
         try {
             LOG.debug("Start writeHtmlReport");
-            PrintWriter pw = new PrintWriter(new FileWriter("output.html"));
+            pw = new PrintWriter(new FileWriter("output.html"));
             pw.println("<h1> Success Results:</h1>");
             pw.println("<table border=1px; style=\"width:100%\">\n" + "  <tr> \n" + "    <th>Current timestamp</th>\n"
                     + "    <th>Status check</th> \n" + "    <th>URL</th>\n" + "    <th>Response time(threshold="
@@ -202,9 +215,9 @@ public class MonitoringApplication {
                 if (!results.get(i).keySet().contains(MAP_ERROR_KEY)) {
                     for (String key : results.get(i).keySet()) {
                         if (key == MAP_STATUS_KEY) {
-                            pw.println("<td style=\"background-color: green\">" + results.get(i).get(key) + "</td>");
+                            pw.println("<td style=\"background-color: green\">" + results.get(i).get(key) + HTML_TAG_END_TD);
                         } else {
-                            pw.println("<td>" + results.get(i).get(key) + "</td>");
+                            pw.println("<td>" + results.get(i).get(key) + HTML_TAG_END_TD);
                         }
                     }
                 }
@@ -220,18 +233,20 @@ public class MonitoringApplication {
                 if (results.get(i).keySet().contains(MAP_ERROR_KEY)) {
                     for (String key : results.get(i).keySet()) {
                         if (key == MAP_STATUS_KEY) {
-                            pw.println("<td style=\"background-color: red\">" + results.get(i).get(key) + "</td>");
+                            pw.println("<td style=\"background-color: red\">" + results.get(i).get(key) + HTML_TAG_END_TD);
                         } else {
-                            pw.println("<td>" + results.get(i).get(key) + "</td>");
+                            pw.println("<td>" + results.get(i).get(key) + HTML_TAG_END_TD);
                         }
                     }
                 }
                 pw.println("</tr>");
             }
             pw.println("</table>");
-            pw.close();
+
         } catch (Exception ie) {
             LOG.debug(ie.getMessage());
+        } finally {
+            pw.close();
         }
     }
 }
