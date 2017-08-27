@@ -51,7 +51,7 @@ public class HttpConnection {
                 output.put(ConstantValues.MAP_RESPONSE_TIME_KEY, responeTime + " ms " + ((responeTime > ConstantValues.RESPONSE_TIME_THRESHOLD) ? "(above threshold)" : "(below threshold)"));
                 LOG.debug("timestamp={}, status={}, url={}, responseTime={} ms", timestamp, "GREEN", urlString, (end - start) );
             } else {
-                error = "No \"" + ConstantValues.COMPONENT_STATUS_GREEN + "\" strings from URL content";
+                error = ConstantValues.NO_COMPONENT_STATUS_GREEN;
                 LOG.debug(error);
             }
 

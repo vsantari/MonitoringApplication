@@ -4,6 +4,7 @@ public class ConstantValues {
 
     public static final String HTML_TAG_END_TD = "</td>";
     public static final String COMPONENT_STATUS_GREEN = "Component Status: GREEN";
+    public static final String NO_COMPONENT_STATUS_GREEN = "No \"Component Status: GREEN\" strings from URL content";
     public static final int CONNECTION_TIMEOUT = 3000;
     public static final long RESPONSE_TIME_THRESHOLD = 500;
     public static final long RETRY_DELAY_MS = 1000;

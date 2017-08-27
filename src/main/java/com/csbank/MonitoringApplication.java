@@ -34,7 +34,7 @@ public class MonitoringApplication {
         for (String urlString: urlStrings) {
             for (int retry = 1; retry <= 3; retry++) {
                 LinkedHashMap<String, String> output = httpConnection.checkHttpURLConnection(urlString, retry);
-                if (!output.containsKey(ConstantValues.MAP_ERROR_KEY)) {
+                if (!output.containsKey(ConstantValues.MAP_ERROR_KEY) || output.containsValue(ConstantValues.NO_COMPONENT_STATUS_GREEN)) {
                     results.add(output);
                     break;
                 }
