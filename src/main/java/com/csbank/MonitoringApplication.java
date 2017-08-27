@@ -32,17 +32,21 @@ public class MonitoringApplication {
             urlStrings = urlString.split(",");
         } else if (urlStringPath != null) {
             urlStrings = readURLStringFromFile(urlStringPath);
-
         }
 
         if (urlStrings != null) {
             ArrayList<LinkedHashMap<String, String>> results = startMonitor(urlStrings);
-            writeOutput(results);
+            writeHtmlReport(results);
         } else {
             LOG.debug("Empty URL Strings");
         }
     }
 
+    /**
+     * Read URL strings from the file
+     * @param filename
+     * @return Array String
+     */
     private static String[] readURLStringFromFile(String filename) {
         String urlStrings[] = null;
         LOG.debug("Reading {}", filename);
@@ -54,7 +58,6 @@ public class MonitoringApplication {
             while ((line = bufferedReader.readLine()) != null) {
                line = line.trim();
                 if (!line.equals("")) {
-                    System.out.println("====" + line + "===");
                     lines.add(line);
                 }
             }
@@ -68,11 +71,17 @@ public class MonitoringApplication {
        return urlStrings;
     }
 
+    /**
+     * Start checking URL connection and parsing it's content
+     * @param urlStrings URL
+     * @return ArrayList
+     */
     private static  ArrayList<LinkedHashMap<String, String>> startMonitor(String[] urlStrings)  {
         ArrayList<LinkedHashMap<String, String>> results = new ArrayList<LinkedHashMap<String, String>>();
         for (String urlString: urlStrings) {
             String error = null;
             boolean isGreenStatus = false;
+            int statusCode = 0;
             String timestamp = "";
             Date date = new Date();
             for (int count = 1; count <=3; count++) {
@@ -80,16 +89,15 @@ public class MonitoringApplication {
                     LOG.debug("Checking {} connection", urlString);
                     URL url = new URL(urlString);
                     long start = System.currentTimeMillis();
-                    int statusCode = 0;
                     InputStream inputStream = null;
                     HttpURLConnection http = (HttpURLConnection) url.openConnection();
                     http.setConnectTimeout(CONNECTION_TIMEOUT);
-                    LOG.debug("Setting connection timeout to {}", CONNECTION_TIMEOUT);
+                    LOG.debug("Setting connection timeout to {} ms.", CONNECTION_TIMEOUT);
                     try {
                         statusCode = http.getResponseCode();
                         inputStream = http.getInputStream();
 
-                        if (statusCode == 200) {
+                        if (statusCode == HttpURLConnection.HTTP_OK) {
                             isGreenStatus = getUrlContents(inputStream).contains(COMPONENT_STATUS_GREEN);
                             timestamp = String.valueOf(date.getTime());
                             long end = System.currentTimeMillis();
@@ -109,7 +117,7 @@ public class MonitoringApplication {
                         }
                     } finally {
                         http.disconnect();
-                        if (isGreenStatus) {
+                        if (statusCode == HttpURLConnection.HTTP_OK) {
                             break;
                         }
 
@@ -139,6 +147,11 @@ public class MonitoringApplication {
         return results;
     }
 
+    /**
+     * Read URL content
+     * @param inputStream
+     * @return String
+     */
     private static String getUrlContents(InputStream inputStream) {
         StringBuilder content = new StringBuilder();
         try {
@@ -155,7 +168,11 @@ public class MonitoringApplication {
         return content.toString();
     }
 
-    private static void writeOutput(ArrayList<LinkedHashMap<String, String>> results)  {
+    /**
+     * Write output in html format
+     * @param results
+     */
+    private static void writeHtmlReport(ArrayList<LinkedHashMap<String, String>> results)  {
         try {
             PrintWriter pw = new PrintWriter(new FileWriter("output.html"));
             pw.println("<h1> Success Results:</h1>");
