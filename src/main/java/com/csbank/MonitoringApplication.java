@@ -248,20 +248,21 @@ public class MonitoringApplication {
             pw.println("<h1> Failed Results:</h1>");
             pw.println("<table border=1px; style=\"width:100%\">\n" + "  <tr> \n" + "    <th>Current timestamp</th>\n"
                     + "    <th>Status check</th> \n" + "    <th>URL</th>\n" + "    <th>Error</th>\n" +  "    <th>Retry</th>\n" +"  </tr>");
-            for(int i=0; i< results.size();i++)  {
+            for(int i=0; i< results.size(); i++)  {
                 pw.println("<tr>");
                 if (results.get(i).keySet().contains(MAP_ERROR_KEY)) {
                     for (String key : results.get(i).keySet()) {
-                        String value = results.get(i).get(key);
+                        String mapValue = results.get(i).get(key);
                         if (key == MAP_STATUS_KEY) {
-                            pw.println("<td style=\"background-color: red\">" + value + HTML_TAG_END_TD);
-                        } else if (key == MAP_URL_KEY && isURLValid(value)) {
-                            pw.println("<td> <a href=" + value + " target=\"_blank\">" + value + "</a>" + HTML_TAG_END_TD);
+                            pw.println("<td style=\"background-color: red\">" + mapValue + HTML_TAG_END_TD);
+                        } else if (key == MAP_URL_KEY && isURLValid(mapValue)) {
+                            pw.println("<td> <a href=" + mapValue + " target=\"_blank\">" + mapValue + "</a>" + HTML_TAG_END_TD);
                         } else {
-                            pw.println("<td>" + value + HTML_TAG_END_TD);
+                            pw.println("<td>" + mapValue + HTML_TAG_END_TD);
                         }
                     }
                 }
+
                 pw.println("</tr>");
             }
             pw.println("</table>");
