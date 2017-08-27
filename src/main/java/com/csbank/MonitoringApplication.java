@@ -51,7 +51,7 @@ public class MonitoringApplication {
             ArrayList<LinkedHashMap<String, String>> results = startMonitor(urlStrings);
             if (!results.isEmpty()) {
                 Date date = new Date() ;
-                SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd_hh-mm-ss") ;
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_hh-mm-ss") ;
                 writeSuccessHtmlReport(OUTPUT_NAME + dateFormat.format(date) + ".html", results);
                 writeFailedHtmlReport(OUTPUT_NAME + dateFormat.format(date) + ".html", results);
             } else {
