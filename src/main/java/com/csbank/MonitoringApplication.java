@@ -29,9 +29,7 @@ public class MonitoringApplication {
     private static final String MAP_RESPONSE_TIME_KEY = "responsetime";
     private static final String MAP_ERROR_KEY = "error";
     private static final String MAP_RETRY_KEY = "retry";
-    private static final String OUTPUT_NAME = "output-";
-
-
+    private static final String OUTPUT_NAME = "./logs/output-";
 
     private static final Logger LOG = LogManager.getLogger(MonitoringApplication.class);
 
@@ -67,7 +65,7 @@ public class MonitoringApplication {
      * @param filename
      * @return Array String
      */
-    private static String[] readURLStringFromFile(String filename) {
+    public static String[] readURLStringFromFile(String filename) {
         LOG.debug("Start readURLStringFromFile.. filename={}", filename);
         String[] urlStrings =null;
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filename))) {
@@ -221,10 +219,13 @@ public class MonitoringApplication {
                 pw.println("<tr>");
                 if (!results.get(i).keySet().contains(MAP_ERROR_KEY)) {
                     for (String key : results.get(i).keySet()) {
+                        String value = results.get(i).get(key);
                         if (key == MAP_STATUS_KEY) {
-                            pw.println("<td style=\"background-color: green\">" + results.get(i).get(key) + HTML_TAG_END_TD);
+                            pw.println("<td style=\"background-color: green\">" + value + HTML_TAG_END_TD);
+                        } else if (key == MAP_URL_KEY && isURLValid(value)) {
+                            pw.println("<td> <a href=" + value + " target=\"_blank\">" + value + "</a>" + HTML_TAG_END_TD);
                         } else {
-                            pw.println("<td>" + results.get(i).get(key) + HTML_TAG_END_TD);
+                            pw.println("<td>" + value + HTML_TAG_END_TD);
                         }
                     }
                 }
@@ -251,10 +252,13 @@ public class MonitoringApplication {
                 pw.println("<tr>");
                 if (results.get(i).keySet().contains(MAP_ERROR_KEY)) {
                     for (String key : results.get(i).keySet()) {
+                        String value = results.get(i).get(key);
                         if (key == MAP_STATUS_KEY) {
-                            pw.println("<td style=\"background-color: red\">" + results.get(i).get(key) + HTML_TAG_END_TD);
+                            pw.println("<td style=\"background-color: red\">" + value + HTML_TAG_END_TD);
+                        } else if (key == MAP_URL_KEY && isURLValid(value)) {
+                            pw.println("<td> <a href=" + value + " target=\"_blank\">" + value + "</a>" + HTML_TAG_END_TD);
                         } else {
-                            pw.println("<td>" + results.get(i).get(key) + HTML_TAG_END_TD);
+                            pw.println("<td>" + value + HTML_TAG_END_TD);
                         }
                     }
                 }
@@ -264,6 +268,20 @@ public class MonitoringApplication {
         }
         catch (IOException ie) {
             LOG.error(ie.getMessage());
+        }
+    }
+
+    /**
+     * Check if the URL string is valid or not
+     * @param urlString URL String
+     * @return True if valid, otherwise, False
+     */
+    private static boolean isURLValid(String urlString) {
+        try {
+            URL url = new URL(urlString);
+            return true;
+        } catch (java.net.MalformedURLException mue) {
+           return false;
         }
     }
 }
