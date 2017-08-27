@@ -15,19 +15,21 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
 import java.io.FileReader;
 import java.util.List;
+import java.text.SimpleDateFormat;
 
 public class MonitoringApplication {
     private static final String COMPONENT_STATUS_GREEN = "Component Status: GREEN";
     private static final int CONNECTION_TIMEOUT = 3000;
     private static final long RESPONSE_TIME_THRESHOLD = 500;
-    private static final long SLEEP_TIME = 1000;
+    private static final long RETRY_DELAY_MS = 1000;
     private static final String HTML_TAG_END_TD = "</td>";
     private static final String MAP_STATUS_KEY = "status";
     private static final String MAP_TIMESTAMP_KEY = "timestamp";
     private static final String MAP_URL_KEY = "url";
     private static final String MAP_RESPONSE_TIME_KEY = "responsetime";
     private static final String MAP_ERROR_KEY = "error";
-    private static final String OUTPUT_FILENAME = "output.html";
+    private static final String MAP_RETRY_KEY = "retry";
+    private static final String OUTPUT_NAME = "output-";
 
 
 
@@ -48,8 +50,10 @@ public class MonitoringApplication {
         if (urlStrings != null) {
             ArrayList<LinkedHashMap<String, String>> results = startMonitor(urlStrings);
             if (!results.isEmpty()) {
-                writeSuccessHtmlReport(results);
-                writeFailedHtmlReport(results);
+                Date date = new Date() ;
+                SimpleDateFormat dateFormat = new SimpleDateFormat("YYYY-MM-dd_hh-mm-ss") ;
+                writeSuccessHtmlReport(OUTPUT_NAME + dateFormat.format(date) + ".html", results);
+                writeFailedHtmlReport(OUTPUT_NAME + dateFormat.format(date) + ".html", results);
             } else {
                 LOG.debug("Result is empty");
             }
@@ -83,6 +87,77 @@ public class MonitoringApplication {
     }
 
     /**
+     * Check HTTP URL Connection
+     * @param urlString URL String
+     * @param retry
+     * @return LinkedHashMap
+     */
+    private static LinkedHashMap<String, String> checkHttpURLConnection(String urlString, int retry) {
+        LOG.debug("Start checkHttpURLConnection");
+        String error = null;
+        boolean isGreenStatus = false;
+        int statusCode = 0;
+        String timestamp = "";
+        Date date = new Date();
+        LinkedHashMap<String, String> output = new LinkedHashMap();
+        HttpURLConnection http = null;
+        try {
+            LOG.debug("Checking Http URL Connection for {}", urlString);
+            URL url = new URL(urlString);
+            long start = System.currentTimeMillis();
+            InputStream inputStream = null;
+            http = (HttpURLConnection) url.openConnection();
+            http.setConnectTimeout(CONNECTION_TIMEOUT);
+            LOG.debug("Setting connection timeout to {} ms.", CONNECTION_TIMEOUT);
+            statusCode = http.getResponseCode();
+            inputStream = http.getInputStream();
+            isGreenStatus = getUrlContents(inputStream).contains(COMPONENT_STATUS_GREEN);
+            timestamp = String.valueOf(date.getTime());
+            long end = System.currentTimeMillis();
+            if (isGreenStatus && statusCode == HttpURLConnection.HTTP_OK) {
+                long responeTime = (end - start);
+                output.put(MAP_TIMESTAMP_KEY, timestamp);
+                output.put(MAP_STATUS_KEY, "GREEN");
+                output.put(MAP_URL_KEY, urlString);
+                output.put(MAP_RESPONSE_TIME_KEY, responeTime + " ms " + ((responeTime > RESPONSE_TIME_THRESHOLD) ? "(above threshold)" : "(below threshold)"));
+                LOG.debug("timestamp={}, status={}, url={}, responseTime={} ms", timestamp, "GREEN", urlString, (end - start) );
+             } else {
+                error = "No \"" + COMPONENT_STATUS_GREEN + "\" strings from URL content";
+                LOG.debug(error);
+            }
+
+        } catch (IOException ioException) {
+            error = ioException.toString();
+            timestamp = String.valueOf(date.getTime());
+            LOG.error(ioException);
+            long sleepTime = retry * RETRY_DELAY_MS;
+            LOG.error("{} Try connecting... Delaying for {} ms", retry, sleepTime);
+            try {
+                Thread.sleep(sleepTime);
+            } catch (final InterruptedException ie) {
+                LOG.error("Interrupted! {}", ie.getMessage());
+                Thread.currentThread().interrupt();
+            }
+        }
+        finally {
+            if (http != null) {
+                http.disconnect();
+            }
+        }
+
+        if (!isGreenStatus) {
+            output.put(MAP_TIMESTAMP_KEY, timestamp);
+            output.put(MAP_STATUS_KEY, "RED");
+            output.put(MAP_URL_KEY, urlString);
+            output.put(MAP_ERROR_KEY, error);
+            output.put(MAP_RETRY_KEY, String.valueOf(retry));
+        }
+
+        return output;
+    }
+
+
+    /**
      * Start checking URL connection and parsing it's content
      * @param urlStrings URL
      * @return ArrayList
@@ -92,72 +167,20 @@ public class MonitoringApplication {
         ArrayList<LinkedHashMap<String, String>> results = new ArrayList();
 
         for (String urlString: urlStrings) {
-            String error = null;
-            boolean isGreenStatus = false;
-            int statusCode = 0;
-            String timestamp = "";
-            Date date = new Date();
-            for (int count = 1; count <=3; count++) {
-                try {
-                    LOG.debug("Checking {} connection", urlString);
-                    URL url = new URL(urlString);
-                    long start = System.currentTimeMillis();
-                    InputStream inputStream = null;
-                    HttpURLConnection http = (HttpURLConnection) url.openConnection();
-                    http.setConnectTimeout(CONNECTION_TIMEOUT);
-                    LOG.debug("Setting connection timeout to {} ms.", CONNECTION_TIMEOUT);
-                    try {
-                        statusCode = http.getResponseCode();
-                        inputStream = http.getInputStream();
-
-                        if (statusCode == HttpURLConnection.HTTP_OK) {
-                            isGreenStatus = getUrlContents(inputStream).contains(COMPONENT_STATUS_GREEN);
-                            timestamp = String.valueOf(date.getTime());
-                            long end = System.currentTimeMillis();
-                            if (isGreenStatus) {
-                                LinkedHashMap<String, String> output = new LinkedHashMap();
-                                long responeTime = (end - start);
-                                output.put(MAP_TIMESTAMP_KEY, timestamp);
-                                output.put(MAP_STATUS_KEY, "GREEN");
-                                output.put(MAP_URL_KEY, urlString);
-                                output.put(MAP_RESPONSE_TIME_KEY, responeTime + " ms " + ((responeTime > RESPONSE_TIME_THRESHOLD) ? "(above threshold)" : "(below threshold)"));
-                                LOG.debug("timestamp={}, status={}, url={}, responseTime={} ms", timestamp, "GREEN", urlString, (end - start) );
-                                results.add(output);
-                            } else {
-                                error = "No \"" + COMPONENT_STATUS_GREEN + "\" strings from URL content";
-                                LOG.debug(error);
-                            }
-                        }
-                    } finally {
-                        http.disconnect();
-                    }
-                } catch (IOException ioException) {
-                    error = ioException.toString();
-                    timestamp = String.valueOf(date.getTime());
-                    LOG.error(ioException);
-                    try {
-                        long sleepTime = count * SLEEP_TIME;
-                        Thread.sleep(sleepTime);
-                        LOG.error("{} Try connecting... Delaying for {} ms", count, sleepTime);
-                    } catch (final InterruptedException ie) {
-                        LOG.error("Interrupted! {}", ie.getMessage());
-                        Thread.currentThread().interrupt();
-                    }
-                }
-                if (statusCode == HttpURLConnection.HTTP_OK) {
+            for (int retry = 1; retry <= 3; retry++) {
+                LinkedHashMap<String, String> output = checkHttpURLConnection(urlString, retry);
+                if (!output.containsKey(MAP_ERROR_KEY)) {
+                    results.add(output);
                     break;
+                } else {
+                    if (retry == 3) {
+                        results.add(output);
+                    }
                 }
-            }
-            if (!isGreenStatus) {
-                LinkedHashMap<String, String> output = new LinkedHashMap();
-                output.put(MAP_TIMESTAMP_KEY, timestamp);
-                output.put(MAP_STATUS_KEY, "RED");
-                output.put(MAP_URL_KEY, urlString);
-                output.put(MAP_ERROR_KEY, error);
-                results.add(output);
-            }
-        }
 
+            }
+
+        }
         return results;
     }
 
@@ -187,9 +210,9 @@ public class MonitoringApplication {
      * Write success report in html format
      * @param results
      */
-    private static void writeSuccessHtmlReport(ArrayList<LinkedHashMap<String, String>> results)  {
-        LOG.debug("Start writeSuccessHtmlReport. Filename={}", OUTPUT_FILENAME);
-        try (PrintWriter pw = new PrintWriter(new FileWriter(OUTPUT_FILENAME))) {
+    private static void writeSuccessHtmlReport(String filename, ArrayList<LinkedHashMap<String, String>> results)  {
+        LOG.debug("Start writeSuccessHtmlReport. Filename={}", filename);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(filename))) {
             pw.println("<h1> Success Results:</h1>");
             pw.println("<table border=1px; style=\"width:100%\">\n" + "  <tr> \n" + "    <th>Current timestamp</th>\n"
                     + "    <th>Status check</th> \n" + "    <th>URL</th>\n" + "    <th>Response time(threshold="
@@ -218,12 +241,12 @@ public class MonitoringApplication {
      * Write failed resport in html format
      * @param results
      */
-    private static void writeFailedHtmlReport(ArrayList<LinkedHashMap<String, String>> results)  {
-        LOG.debug("Start writeFailedHtmlReport. Filename={}", OUTPUT_FILENAME);
-        try (PrintWriter pw = new PrintWriter(new FileWriter(OUTPUT_FILENAME, true))) {
+    private static void writeFailedHtmlReport(String filename, ArrayList<LinkedHashMap<String, String>> results)  {
+        LOG.debug("Start writeFailedHtmlReport. Filename={}", filename);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(filename, true))) {
             pw.println("<h1> Failed Results:</h1>");
             pw.println("<table border=1px; style=\"width:100%\">\n" + "  <tr> \n" + "    <th>Current timestamp</th>\n"
-                    + "    <th>Status check</th> \n" + "    <th>URL</th>\n" + "    <th>Error</th>\n" + "  </tr>");
+                    + "    <th>Status check</th> \n" + "    <th>URL</th>\n" + "    <th>Error</th>\n" +  "    <th>Retry</th>\n" +"  </tr>");
             for(int i=0; i< results.size();i++)  {
                 pw.println("<tr>");
                 if (results.get(i).keySet().contains(MAP_ERROR_KEY)) {
