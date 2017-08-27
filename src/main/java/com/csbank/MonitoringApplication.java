@@ -62,11 +62,7 @@ public class MonitoringApplication {
     private static String[] readURLStringFromFile(String filename) {
         LOG.debug("Start readURLStringFromFile.. filename={}", filename);
         String[] urlStrings =null;
-        FileReader fileReader = null;
-        BufferedReader bufferedReader = null;
-        try {
-            fileReader = new FileReader(filename);
-            bufferedReader = new BufferedReader(fileReader);
+        try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filename))) {
             List<String> lines = new ArrayList();
             String line = null;
             while ((line = bufferedReader.readLine()) != null) {
@@ -78,21 +74,6 @@ public class MonitoringApplication {
             urlStrings = lines.toArray(new String[lines.size()]);
         } catch (IOException ie) {
             LOG.error(ie.getMessage());
-        } finally {
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch(IOException ie){
-                    LOG.error(ie.getMessage());
-                }
-            }
-            if (fileReader != null ) {
-                try {
-                    bufferedReader.close();
-                } catch(IOException ie){
-                    LOG.error(ie.getMessage());
-                }
-            }
         }
         return urlStrings;
     }
@@ -145,9 +126,6 @@ public class MonitoringApplication {
                         }
                     } finally {
                         http.disconnect();
-                        if (statusCode == HttpURLConnection.HTTP_OK) {
-                            break;
-                        }
                     }
                 } catch (IOException ioException) {
                     error = ioException.toString();
@@ -157,9 +135,12 @@ public class MonitoringApplication {
                         Thread.sleep(count * 1000);
                         LOG.error("{} Try connecting... Delaying for {} ms", count, count * 1000);
                     } catch (final InterruptedException ie) {
-                        LOG.error(ie.getMessage());
+                        LOG.error("Interrupted! {}", ie.getMessage());
+                        Thread.currentThread().interrupt();
                     }
-
+                }
+                if (statusCode == HttpURLConnection.HTTP_OK) {
+                    break;
                 }
             }
             if (!isGreenStatus) {
