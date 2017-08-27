@@ -65,7 +65,7 @@ public class MonitoringApplication {
      * @param filename
      * @return Array String
      */
-    public static String[] readURLStringFromFile(String filename) {
+    private static String[] readURLStringFromFile(String filename) {
         LOG.debug("Start readURLStringFromFile.. filename={}", filename);
         String[] urlStrings =null;
         try (BufferedReader bufferedReader = new BufferedReader(new FileReader(filename))) {
@@ -281,10 +281,8 @@ public class MonitoringApplication {
             URL url = new URL(urlString);
             url.toURI();
             return true;
-        } catch (java.net.MalformedURLException mue) {
+        } catch (java.net.MalformedURLException | java.net.URISyntaxException e) {
            return false;
-        } catch (java.net.URISyntaxException use) {
-            return false;
         }
     }
 }
