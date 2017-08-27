@@ -20,13 +20,16 @@ public class MonitoringApplication {
     private static final String COMPONENT_STATUS_GREEN = "Component Status: GREEN";
     private static final int CONNECTION_TIMEOUT = 3000;
     private static final long RESPONSE_TIME_THRESHOLD = 500;
+    private static final long SLEEP_TIME = 1000;
+    private static final String HTML_TAG_END_TD = "</td>";
     private static final String MAP_STATUS_KEY = "status";
     private static final String MAP_TIMESTAMP_KEY = "timestamp";
     private static final String MAP_URL_KEY = "url";
     private static final String MAP_RESPONSE_TIME_KEY = "responsetime";
     private static final String MAP_ERROR_KEY = "error";
+    private static final String OUTPUT_FILENAME = "output.html";
 
-    private static final String HTML_TAG_END_TD = "</td>";
+
 
     private static final Logger LOG = LogManager.getLogger(MonitoringApplication.class);
 
@@ -45,7 +48,8 @@ public class MonitoringApplication {
         if (urlStrings != null) {
             ArrayList<LinkedHashMap<String, String>> results = startMonitor(urlStrings);
             if (!results.isEmpty()) {
-                writeHtmlReport(results);
+                writeSuccessHtmlReport(results);
+                writeFailedHtmlReport(results);
             } else {
                 LOG.debug("Result is empty");
             }
@@ -132,8 +136,9 @@ public class MonitoringApplication {
                     timestamp = String.valueOf(date.getTime());
                     LOG.error(ioException);
                     try {
-                        Thread.sleep(count * 1000);
-                        LOG.error("{} Try connecting... Delaying for {} ms", count, count * 1000);
+                        long sleepTime = count * SLEEP_TIME;
+                        Thread.sleep(sleepTime);
+                        LOG.error("{} Try connecting... Delaying for {} ms", count, sleepTime);
                     } catch (final InterruptedException ie) {
                         LOG.error("Interrupted! {}", ie.getMessage());
                         Thread.currentThread().interrupt();
@@ -179,14 +184,12 @@ public class MonitoringApplication {
     }
 
     /**
-     * Write output in html format
+     * Write success report in html format
      * @param results
      */
-    private static void writeHtmlReport(ArrayList<LinkedHashMap<String, String>> results)  {
-        PrintWriter pw = null;
-        try {
-            LOG.debug("Start writeHtmlReport");
-            pw = new PrintWriter(new FileWriter("output.html"));
+    private static void writeSuccessHtmlReport(ArrayList<LinkedHashMap<String, String>> results)  {
+        LOG.debug("Start writeSuccessHtmlReport. Filename={}", OUTPUT_FILENAME);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(OUTPUT_FILENAME))) {
             pw.println("<h1> Success Results:</h1>");
             pw.println("<table border=1px; style=\"width:100%\">\n" + "  <tr> \n" + "    <th>Current timestamp</th>\n"
                     + "    <th>Status check</th> \n" + "    <th>URL</th>\n" + "    <th>Response time(threshold="
@@ -205,7 +208,19 @@ public class MonitoringApplication {
                 pw.println("</tr>");
             }
             pw.println("</table>");
+        }
+        catch (IOException ie) {
+            LOG.error(ie.getMessage());
+        }
+    }
 
+    /**
+     * Write failed resport in html format
+     * @param results
+     */
+    private static void writeFailedHtmlReport(ArrayList<LinkedHashMap<String, String>> results)  {
+        LOG.debug("Start writeFailedHtmlReport. Filename={}", OUTPUT_FILENAME);
+        try (PrintWriter pw = new PrintWriter(new FileWriter(OUTPUT_FILENAME, true))) {
             pw.println("<h1> Failed Results:</h1>");
             pw.println("<table border=1px; style=\"width:100%\">\n" + "  <tr> \n" + "    <th>Current timestamp</th>\n"
                     + "    <th>Status check</th> \n" + "    <th>URL</th>\n" + "    <th>Error</th>\n" + "  </tr>");
@@ -223,11 +238,9 @@ public class MonitoringApplication {
                 pw.println("</tr>");
             }
             pw.println("</table>");
-
-        } catch (Exception ie) {
-            LOG.debug(ie.getMessage());
-        } finally {
-            pw.close();
+        }
+        catch (IOException ie) {
+            LOG.error(ie.getMessage());
         }
     }
 }
