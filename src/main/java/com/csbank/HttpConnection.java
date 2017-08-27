@@ -14,7 +14,6 @@ import org.apache.logging.log4j.Logger;
 
 public class HttpConnection {
     private static final Logger LOG = LogManager.getLogger(HttpConnection.class);
-    private static ConstantValues constantValues = new ConstantValues();
 
     /**
      * Check HTTP URL Connection
@@ -37,22 +36,22 @@ public class HttpConnection {
             long start = System.currentTimeMillis();
             InputStream inputStream = null;
             http = (HttpURLConnection) url.openConnection();
-            http.setConnectTimeout(constantValues.CONNECTION_TIMEOUT);
-            LOG.debug("Setting connection timeout to {} ms.", constantValues.CONNECTION_TIMEOUT);
+            http.setConnectTimeout(ConstantValues.CONNECTION_TIMEOUT);
+            LOG.debug("Setting connection timeout to {} ms.", ConstantValues.CONNECTION_TIMEOUT);
             statusCode = http.getResponseCode();
             inputStream = http.getInputStream();
-            isGreenStatus = getUrlContents(inputStream).contains(constantValues.COMPONENT_STATUS_GREEN);
+            isGreenStatus = getUrlContents(inputStream).contains(ConstantValues.COMPONENT_STATUS_GREEN);
             timestamp = String.valueOf(date.getTime());
             long end = System.currentTimeMillis();
             if (isGreenStatus && statusCode == HttpURLConnection.HTTP_OK) {
                 long responeTime = (end - start);
-                output.put(constantValues.MAP_TIMESTAMP_KEY, timestamp);
-                output.put(constantValues.MAP_STATUS_KEY, "GREEN");
-                output.put(constantValues.MAP_URL_KEY, urlString);
-                output.put(constantValues.MAP_RESPONSE_TIME_KEY, responeTime + " ms " + ((responeTime > constantValues.RESPONSE_TIME_THRESHOLD) ? "(above threshold)" : "(below threshold)"));
+                output.put(ConstantValues.MAP_TIMESTAMP_KEY, timestamp);
+                output.put(ConstantValues.MAP_STATUS_KEY, "GREEN");
+                output.put(ConstantValues.MAP_URL_KEY, urlString);
+                output.put(ConstantValues.MAP_RESPONSE_TIME_KEY, responeTime + " ms " + ((responeTime > ConstantValues.RESPONSE_TIME_THRESHOLD) ? "(above threshold)" : "(below threshold)"));
                 LOG.debug("timestamp={}, status={}, url={}, responseTime={} ms", timestamp, "GREEN", urlString, (end - start) );
             } else {
-                error = "No \"" + constantValues.COMPONENT_STATUS_GREEN + "\" strings from URL content";
+                error = "No \"" + ConstantValues.COMPONENT_STATUS_GREEN + "\" strings from URL content";
                 LOG.debug(error);
             }
 
@@ -60,7 +59,7 @@ public class HttpConnection {
             error = ioException.toString();
             timestamp = String.valueOf(date.getTime());
             LOG.error(ioException);
-            long sleepTime = retry * constantValues.RETRY_DELAY_MS;
+            long sleepTime = retry * ConstantValues.RETRY_DELAY_MS;
             LOG.error("{} Try connecting... Delaying for {} ms", retry, sleepTime);
             try {
                 Thread.sleep(sleepTime);
@@ -76,11 +75,11 @@ public class HttpConnection {
         }
 
         if (!isGreenStatus) {
-            output.put(constantValues.MAP_TIMESTAMP_KEY, timestamp);
-            output.put(constantValues.MAP_STATUS_KEY, "RED");
-            output.put(constantValues.MAP_URL_KEY, urlString);
-            output.put(constantValues.MAP_ERROR_KEY, error);
-            output.put(constantValues.MAP_RETRY_KEY, String.valueOf(retry));
+            output.put(ConstantValues.MAP_TIMESTAMP_KEY, timestamp);
+            output.put(ConstantValues.MAP_STATUS_KEY, "RED");
+            output.put(ConstantValues.MAP_URL_KEY, urlString);
+            output.put(ConstantValues.MAP_ERROR_KEY, error);
+            output.put(ConstantValues.MAP_RETRY_KEY, String.valueOf(retry));
         }
 
         return output;

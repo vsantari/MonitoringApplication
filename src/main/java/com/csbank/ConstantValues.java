@@ -1,6 +1,6 @@
 package com.csbank;
 
-public final class ConstantValues {
+public class ConstantValues {
 
     public static final String HTML_TAG_END_TD = "</td>";
     public static final String COMPONENT_STATUS_GREEN = "Component Status: GREEN";
@@ -17,4 +17,7 @@ public final class ConstantValues {
     public static final String MAP_RESPONSE_TIME_KEY = "responsetime";
     public static final String MAP_RETRY_KEY = "retry";
     public static final String MAP_ERROR_KEY = "error";
+
+    private ConstantValues() {
+    }
 }
