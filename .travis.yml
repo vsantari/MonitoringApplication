@@ -1,5 +1,4 @@
 language: java
-script: ./gradlew build run -DURL_STRINGS_PATH="./URL_Strings.txt"
 addons:
   sonarcloud:
     organization: "monitoringapplication" # the key of the org you chose at step #3
@@ -7,4 +6,4 @@ addons:
       secure: 0f7fe591eb5255c8ad2985352fc5dd86c9a09f80
 script:
   # other script steps might be done before running the actual analysis
-  - sonar-scanner
+  - sonar-scanner && ./gradlew build run -DURL_STRINGS_PATH="./URL_Strings.txt"
