@@ -1,21 +1,21 @@
 package com.csbank;
 
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URL;
-import java.net.HttpURLConnection;
-import java.io.InputStream;
-import java.util.LinkedHashMap;
-import java.util.Date;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.FileWriter;
-import java.util.ArrayList;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.LogManager;
 import java.io.FileReader;
-import java.util.List;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.List;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 public class MonitoringApplication {
     private static final String COMPONENT_STATUS_GREEN = "Component Status: GREEN";
@@ -279,9 +279,12 @@ public class MonitoringApplication {
     private static boolean isURLValid(String urlString) {
         try {
             URL url = new URL(urlString);
+            url.toURI();
             return true;
         } catch (java.net.MalformedURLException mue) {
            return false;
+        } catch (java.net.URISyntaxException use) {
+            return false;
         }
     }
 }
